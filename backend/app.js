@@ -8,12 +8,21 @@ const mongoose = require('mongoose');
 const path = require ('path');
 // utilisation du module 'helmet' pour la sécurité en protégeant l'application de certaines vulnérabilités
 // il sécurise nos requêtes HTTP, sécurise les en-têtes et ajoute une protection XSS
-const helmet= require('helmet');
+const helmet = require('helmet');
+//Plugin qui limite le nomrbe de requests par utilisateurs.
+const rateLimit = require("express-rate-limit");
+
 //pour avoir acces a la base de donnée
 require('dotenv').config()
 
 const saucesRoutes = require('./routes/sauces')
 const userRoutes = require('./routes/user');
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 min
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+
 
 
 mongoose.connect(process.env.MONGO_LOG,
@@ -36,6 +45,8 @@ app.use((req, res, next) => {
 app.use(bodyParser.json());
 // On utilise helmet pour plusieurs raisons notamment la mise en place du X-XSS-Protection afin d'activer le filtre de script intersites(XSS) dans les navigateurs web
 app.use(helmet());
+
+app.use(limiter);
 
 // Midleware qui permet de charger les fichiers qui sont dans le repertoire images
 app.use('/images', express.static(path.join(__dirname, 'images')));
